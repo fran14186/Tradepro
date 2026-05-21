@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TradePro">
+    <meta name="theme-color" content="#0f172a">
+    <title>TradePro - App Trading Profesional</title>
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23378add' width='192' height='192'/><text x='50%' y='50%' font-size='120' fill='white' text-anchor='middle' dy='.3em' font-weight='bold'>📊</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23378add' width='192' height='192' rx='40'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dy='.3em' font-weight='bold'>📊</text></svg>">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        :root {
+            --primary: #378add;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .app-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sidebar {
+            width: 100%;
+            height: auto;
+            background: linear-gradient(180deg, var(--card-bg) 0%, rgba(30,41,59,0.8) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem;
+            overflow-x: auto;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.5);
+            border-radius: 2px;
+        }
+
+        .logo {
+            font-size: 1rem;
+            font-weight: 700;
+            white-space: nowrap;
+            background: linear-gradient(135deg, var(--primary), #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            min-width: fit-content;
+        }
+
+        .nav-items {
+            display: flex;
+            gap: 0.25rem;
+            overflow-x: auto;
+            flex: 1;
+        }
+
+        .nav-items::-webkit-scrollbar {
+            height: 3px;
+        }
+
+        .nav-item {
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #cbd5e1;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .nav-item:active {
+            background: rgba(55, 138, 221, 0.2);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: rgba(55, 138, 221, 0.25);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1rem;
+            background: linear-gradient(135deg, #0f172a 0%, #1a2540 100%);
+            width: 100%;
+        }
+
+        .main-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 3px;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(15px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(55,138,221,0.15), rgba(34,197,94,0.08));
+            border: 1px solid rgba(55,138,221,0.3);
+            border-radius: 0.6rem;
+            padding: 1rem;
+            transition: all 0.3s;
+        }
+
+        .metric-card:active {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .metric-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.4rem;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.3rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .metric-change {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .metric-change.positive {
+            color: var(--success);
+        }
+
+        .metric-change.negative {
+            color: var(--danger);
+        }
+
+        .card {
+            background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(30,41,59,0.4));
+            border: 1px solid var(--border);
+            border-radius: 0.6rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 0.4rem;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        thead {
+            background: linear-gradient(90deg, rgba(55,138,221,0.1), rgba(55,138,221,0.05));
+            border-bottom: 2px solid var(--border);
+        }
+
+        th {
+            padding: 0.75rem 0.5rem;
+            text-align: left;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid rgba(51,65,85,0.3);
+            color: var(--text-secondary);
+            font-family: 'Courier New', monospace;
+        }
+
+        tr:active {
+            background: rgba(55,138,221,0.08);
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.4rem;
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+        }
+
+        .btn:active {
+            background: rgba(55,138,221,0.15);
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #2563bb);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        input, select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.4rem;
+            background: rgba(15,23,42,0.6);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(55,138,221,0.2);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-win {
+            background: rgba(34,197,94,0.2);
+            color: var(--success);
+        }
+
+        .badge-loss {
+            background: rgba(239,68,68,0.2);
+            color: var(--danger);
+        }
+
+        .badge-open {
+            background: rgba(251,146,60,0.2);
+            color: #fb923c;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--card-bg), rgba(30,41,59,0.8));
+            border: 1px solid var(--border);
+            border-radius: 1.2rem 1.2rem 0 0;
+            padding: 1.5rem;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border-top: 1px solid var(--border);
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { 
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), #2563bb);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(55,138,221,0.4);
+            animation: slideUp 0.3s;
+            z-index: 2000;
+            max-width: 90%;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, rgba(55,138,221,0.08), rgba(34,197,94,0.04));
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 3px solid var(--primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        @media (min-width: 768px) {
+            .app-wrapper {
+                flex-direction: row;
+            }
+
+            .sidebar {
+                width: 280px;
+                height: 100vh;
+                flex-direction: column;
+                padding: 1.5rem 1rem;
+                border-right: 1px solid var(--border);
+                border-bottom: none;
+                overflow-x: visible;
+                overflow-y: auto;
+            }
+
+            .nav-items {
+                flex-direction: column;
+                overflow-x: visible;
+                gap: 0.5rem;
+            }
+
+            .nav-item {
+                width: 100%;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .main-content {
+                max-height: 100vh;
+                padding: 2rem;
+            }
+
+            .modal-content {
+                border-radius: 0.75rem;
+                max-width: 600px;
+                max-height: 90vh;
+            }
+
+            .modal {
+                align-items: center;
+                justify-content: center;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+        }
+
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(0px, env(safe-area-inset-left));
+                padding-right: max(0px, env(safe-area-inset-right));
+                padding-top: max(0px, env(safe-area-inset-top));
+            }
+        }
+
+        .ai-box {
+            background: linear-gradient(135deg, rgba(55,138,221,0.15), rgba(106,90,205,0.1));
+            border: 2px solid rgba(55,138,221,0.3);
+            border-radius: 0.6rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    <div class="sidebar">
+        <div class="logo">📊 TradePro</div>
+        <div class="nav-items">
+            <div class="nav-item active" onclick="showPage('dashboard')">📈 Dashboard</div>
+            <div class="nav-item" onclick="showPage('trades')">📝 Ops</div>
+            <div class="nav-item" onclick="showPage('analytics')">🤖 IA</div>
+            <div class="nav-item" onclick="showPage('portfolio')">💼 Cartera</div>
+            <div class="nav-item" onclick="showPage('stats')">📊 Stats</div>
+            <div class="nav-item" onclick="showPage('alerts')">🔔 Alertas</div>
+            <div class="nav-item" onclick="showPage('settings')">⚙️ Config</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- DASHBOARD -->
+        <div class="page active" id="dashboard">
+            <div class="page-header">
+                <div class="page-title">Dashboard</div>
+                <div class="page-subtitle">Tu desempeño en trading</div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">💰 Balance</div>
+                    <div class="metric-value">$12,450</div>
+                    <div class="metric-change positive">+8.5%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">🎯 Win Rate</div>
+                    <div class="metric-value">62.5%</div>
+                    <div class="metric-change positive">28/45</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">📈 Hoy</div>
+                    <div class="metric-value">+$1,240</div>
+                    <div class="metric-change positive">Ganancia</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">⚠️ Drawdown</div>
+                    <div class="metric-value">-12.3%</div>
+                    <div class="metric-change negative">Max</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>📊 Equity Curve</span>
+                    <button class="btn" onclick="refreshDash()">🔄</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Últimas Operaciones</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Activo</th>
+                                <th>Tipo</th>
+                                <th>P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2026-05-20</td>
+                                <td>EUR/USD</td>
+                                <td>LONG</td>
+                                <td style="color: var(--success);">+$225</td>
+                            </tr>
+                            <tr>
+                                <td>2026-05-19</td>
+                                <td>BTC/USD</td>
+                                <td>LONG</td>
+                                <td style="color: var(--success);">+$850</td>
+                            </tr>
+                            <tr>
+                                <td>2026-05-18</td>
+                                <td>GBP/USD</td>
+                                <td>SHORT</td>
+                                <td style="color: var(--danger);">-$120</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRADES -->
+        <div class="page" id="trades">
+            <div class="page-header">
+                <div class="page-title">Operaciones</div>
+                <div class="page-subtitle">Todas tus operaciones</div>
+            </div>
+
+            <div class="input-group">
+                <input type="text" placeholder="Buscar...">
+                <button class="btn btn-primary" onclick="addTrade()">➕ Nueva</button>
+            </div>
+
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Activo</th>
+                                <th>Tipo</th>
+                                <th>P&L</th>
+                                <th>%</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#001</td>
+                                <td>2026-05-20</td>
+                                <td>BTC/USD</td>
+                                <td>LONG</td>
+                                <td style="color: var(--success);">+$850</td>
+                                <td style="color: var(--success);">+2.00%</td>
+                                <td><span class="badge badge-win">✓</span></td>
+                            </tr>
+                            <tr>
+                                <td>#002</td>
+                                <td>2026-05-19</td>
+                                <td>EUR/USD</td>
+                                <td>SHORT</td>
+                                <td style="color: var(--text-secondary);">-</td>
+                                <td style="color: var(--text-secondary);">-</td>
+                                <td><span class="badge badge-open">●</span></td>
+                            </tr>
+                            <tr>
+                                <td>#003</td>
+                                <td>2026-05-18</td>
+                                <td>ETH/USD</td>
+                                <td>LONG</td>
+                                <td style="color: var(--danger);">-$175</td>
+                                <td style="color: var(--danger);">-3.11%</td>
+                                <td><span class="badge badge-loss">✗</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS -->
+        <div class="page" id="analytics">
+            <div class="page-header">
+                <div class="page-title">Análisis IA</div>
+                <div class="page-subtitle">Recomendaciones automáticas</div>
+            </div>
+
+            <div class="ai-box">
+                🤖 Tu trading muestra fortalezas en operaciones a corto plazo. Detectado patrón consistente en EUR/USD.
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">📌 Patrón</div>
+                    <div class="metric-value" style="font-size: 1.1rem;">Media Móvil</div>
+                    <div class="metric-change positive">72% precisión</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">⭐ Mejor Activo</div>
+                    <div class="metric-value" style="font-size: 1.1rem;">EUR/USD</div>
+                    <div class="metric-change positive">68% win</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">🕐 Hora Óptima</div>
+                    <div class="metric-value" style="font-size: 1.1rem;">08:00-12:00</div>
+                    <div class="metric-change positive">Mayor vol</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">⚖️ Ratio Ideal</div>
+                    <div class="metric-value" style="font-size: 1.1rem;">1:2.5</div>
+                    <div class="metric-change positive">Según datos</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">💡 Recomendaciones</div>
+                <div class="stat-item" style="border-left-color: var(--success);">
+                    <div class="stat-label">✅ Fortaleza</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.3rem;">Gestión de riesgo consistente 1:2.5</div>
+                </div>
+                <div class="stat-item" style="border-left-color: var(--warning);">
+                    <div class="stat-label">⚠️ Mejora</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.3rem;">Operar en horas de mayor volatilidad</div>
+                </div>
+                <div class="stat-item" style="border-left-color: var(--primary);">
+                    <div class="stat-label">💎 Oportunidad</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.3rem;">Aumenta exposición en EUR/USD (+15% ROI)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PORTFOLIO -->
+        <div class="page" id="portfolio">
+            <div class="page-header">
+                <div class="page-title">Cartera</div>
+                <div class="page-subtitle">Posiciones actuales</div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Capital Inicial</div>
+                    <div class="metric-value">$10,000</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Capital Actual</div>
+                    <div class="metric-value">$12,450</div>
+                    <div class="metric-change positive">+24.5%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Posiciones</div>
+                    <div class="metric-value">3</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Exposición</div>
+                    <div class="metric-value">45%</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Posiciones Abiertas</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Activo</th>
+                                <th>Tipo</th>
+                                <th>Entrada</th>
+                                <th>Actual</th>
+                                <th>P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>BTC/USD</td>
+                                <td>LONG</td>
+                                <td>42500</td>
+                                <td>43100</td>
+                                <td style="color: var(--success);">+$300</td>
+                            </tr>
+                            <tr>
+                                <td>ETH/USD</td>
+                                <td>LONG</td>
+                                <td>2250</td>
+                                <td>2280</td>
+                                <td style="color: var(--success);">+$60</td>
+                            </tr>
+                            <tr>
+                                <td>EUR/USD</td>
+                                <td>SHORT</td>
+                                <td>1.0920</td>
+                                <td>1.0850</td>
+                                <td style="color: var(--success);">+$245</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="page" id="stats">
+            <div class="page-header">
+                <div class="page-title">Estadísticas</div>
+                <div class="page-subtitle">Métricas avanzadas</div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Sharpe</div>
+                    <div class="metric-value" style="font-size: 1.3rem;">1.85</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">ROI</div>
+                    <div class="metric-value" style="font-size: 1.3rem;">24.5%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Profit Factor</div>
+                    <div class="metric-value" style="font-size: 1.3rem;">3.2</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Expectativa</div>
+                    <div class="metric-value" style="font-size: 1.3rem;">+$145</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📈 Distribución P&L</div>
+                <div class="chart-container">
+                    <canvas id="pnlChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Análisis Detallado</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Métrica</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Total P&L</td>
+                                <td style="color: var(--success);">+$3,850</td>
+                            </tr>
+                            <tr>
+                                <td>Operaciones Ganadoras</td>
+                                <td style="color: var(--success);">28 (62.2%)</td>
+                            </tr>
+                            <tr>
+                                <td>Operaciones Perdedoras</td>
+                                <td style="color: var(--danger);">17 (37.8%)</td>
+                            </tr>
+                            <tr>
+                                <td>Ganancia Promedio</td>
+                                <td style="color: var(--success);">+$137.5</td>
+                            </tr>
+                            <tr>
+                                <td>Pérdida Promedio</td>
+                                <td style="color: var(--danger);">-$85.3</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALERTS -->
+        <div class="page" id="alerts">
+            <div class="page-header">
+                <div class="page-title">Alertas</div>
+                <div class="page-subtitle">Sistema de notificaciones</div>
+            </div>
+
+            <button class="btn btn-primary" onclick="addAlert()">➕ Nueva Alerta</button>
+
+            <div class="card" style="margin-top: 1rem;">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Activo</th>
+                                <th>Valor</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>🔴 Precio</td>
+                                <td>BTC/USD</td>
+                                <td>Baja a $42,000</td>
+                                <td><span class="badge badge-open">Activa</span></td>
+                            </tr>
+                            <tr>
+                                <td>📊 Volumen</td>
+                                <td>EUR/USD</td>
+                                <td>Sube &gt; 1M</td>
+                                <td><span class="badge badge-open">Activa</span></td>
+                            </tr>
+                            <tr>
+                                <td>⚠️ Volatilidad</td>
+                                <td>GOLD</td>
+                                <td>&gt; 2.5%</td>
+                                <td><span class="badge badge-win">Activada</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="page" id="settings">
+            <div class="page-header">
+                <div class="page-title">Configuración</div>
+                <div class="page-subtitle">Personaliza TradePro</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⚙️ Preferencias</div>
+                <div class="form-group">
+                    <label class="form-label">Moneda Base</label>
+                    <select>
+                        <option>USD - Dólar</option>
+                        <option>EUR - Euro</option>
+                        <option>ARS - Peso Argentino</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Zona Horaria</label>
+                    <select>
+                        <option>America/Argentina/Buenos_Aires</option>
+                        <option>America/New_York</option>
+                        <option>Europe/London</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Capital Inicial</label>
+                    <input type="number" value="10000">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📥 Exportar & Respaldar</div>
+                <button class="btn btn-primary" onclick="backup()">💾 Respaldar</button>
+                <button class="btn" onclick="exportCSV()" style="margin-top: 0.5rem;">📥 Exportar CSV</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title">ℹ️ Acerca de</div>
+                <p style="font-size: 0.9rem;">
+                    <strong>TradePro 3.0 Premium</strong><br>
+                    Aplicación profesional de tracking de trading<br>
+                    <br>
+                    ✅ Funciona offline<br>
+                    ✅ Datos locales (privacidad total)<br>
+                    ✅ Gratis para siempre<br>
+                    <br>
+                    Hecho para traders profesionales
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="addTradeModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>➕ Nueva Operación</span>
+            <span class="modal-close" onclick="closeModal('addTradeModal')">✕</span>
+        </div>
+        <form onsubmit="saveTrade(event)">
+            <div class="form-group">
+                <label class="form-label">Activo</label>
+                <input type="text" placeholder="EUR/USD" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tipo</label>
+                <select required>
+                    <option>LONG</option>
+                    <option>SHORT</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Entrada</label>
+                <input type="number" step="0.00001" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Stop Loss</label>
+                <input type="number" step="0.00001" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Take Profit</label>
+                <input type="number" step="0.00001" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem;">✓ Guardar</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="addAlertModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>🔔 Nueva Alerta</span>
+            <span class="modal-close" onclick="closeModal('addAlertModal')">✕</span>
+        </div>
+        <form onsubmit="saveAlert(event)">
+            <div class="form-group">
+                <label class="form-label">Tipo</label>
+                <select required>
+                    <option>Precio</option>
+                    <option>Volumen</option>
+                    <option>Volatilidad</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Activo</label>
+                <input type="text" placeholder="EUR/USD" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Valor</label>
+                <input type="number" step="0.01" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem;">✓ Crear</button>
+        </form>
+    </div>
+</div>
+
+<script>
+let trades = JSON.parse(localStorage.getItem('trades')) || [];
+
+function showPage(pageName) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    const page = document.getElementById(pageName);
+    if (page) page.classList.add('active');
+    
+    event.target.closest('.nav-item')?.classList.add('active');
+    
+    setTimeout(() => {
+        if (pageName === 'dashboard') initEquityChart();
+        if (pageName === 'stats') initPnlChart();
+    }, 100);
+}
+
+function initEquityChart() {
+    const ctx = document.getElementById('equityChart');
+    if (!ctx || ctx.chart) return;
+    
+    ctx.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7'],
+            datasets: [{
+                label: 'Equity',
+                data: [10000, 10450, 10320, 10850, 11200, 11850, 12450],
+                borderColor: '#378add',
+                backgroundColor: 'rgba(55, 138, 221, 0.1)',
+                tension: 0.4,
+                fill: true,
+                borderWidth: 2,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#cbd5e1' } } },
+            scales: {
+                y: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(51, 65, 85, 0.2)' } },
+                x: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(51, 65, 85, 0.2)' } }
+            }
+        }
+    });
+}
+
+function initPnlChart() {
+    const ctx = document.getElementById('pnlChart');
+    if (!ctx || ctx.chart) return;
+    
+    ctx.chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['$0-100', '$100-250', '$250-500', '$500+'],
+            datasets: [
+                { label: 'Ganancias', data: [5, 8, 10, 5], backgroundColor: 'rgba(34, 197, 94, 0.7)' },
+                { label: 'Pérdidas', data: [3, 2, 1, 0], backgroundColor: 'rgba(239, 68, 68, 0.7)' }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#cbd5e1' } } },
+            scales: {
+                y: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(51, 65, 85, 0.2)' } },
+                x: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(51, 65, 85, 0.2)' } }
+            }
+        }
+    });
+}
+
+function addTrade() {
+    document.getElementById('addTradeModal').classList.add('active');
+}
+
+function addAlert() {
+    document.getElementById('addAlertModal').classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+function saveTrade(e) {
+    e.preventDefault();
+    showNotification('✓ Operación guardada');
+    closeModal('addTradeModal');
+    e.target.reset();
+}
+
+function saveAlert(e) {
+    e.preventDefault();
+    showNotification('✓ Alerta creada');
+    closeModal('addAlertModal');
+    e.target.reset();
+}
+
+function showNotification(msg) {
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.textContent = msg;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 2000);
+}
+
+function refreshDash() {
+    showNotification('🔄 Actualizando...');
+}
+
+function backup() {
+    showNotification('💾 Datos respaldados');
+}
+
+function exportCSV() {
+    showNotification('📥 Descargando CSV...');
+}
+
+window.addEventListener('load', () => {
+    initEquityChart();
+    showNotification('👋 Bienvenido a TradePro');
+});
+</script>
+
+</body>
+</html>
